@@ -28,9 +28,16 @@ env:
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
+# ========== 关键修复 1：全局权限设置 ==========
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-22.04
+    # ========== 关键修复 2：Job 级别的权限设置 ==========
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout
@@ -131,11 +138,10 @@ jobs:
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
-        [ ${UPLOAD_GOFILE} = true && ${{ steps.gofile.outputs.url }} ] && echo "🔗 [GoFile](${{ steps.gofile.outputs.url }})" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
-      uses: softprops/action-gh-release@master
+      uses: softprops/action-gh-release@v2
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
@@ -157,4 +163,5 @@ jobs:
         keep_latest: 3
         delete_tags: true
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # ========== 关键修复 3：这里也要用 PAT ==========
+        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
